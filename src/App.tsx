@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import './App.css';
+import './styles/App.scss';
 import { Route, Routes } from 'react-router-dom';
 
 const Home = React.lazy(() => import('app/modules/home/routing'));
