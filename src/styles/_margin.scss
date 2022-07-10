@@ -1,0 +1,49 @@
+@use 'sass:map';
+@use 'sass:math';
+@import 'variables';
+
+/**
+* Add more spacing if you need 
+*/
+$_spacings: (
+  0: 0 / 16,
+  2: 2 / 16,
+  4: 4 / 16,
+  6: 6 / 16,
+  8: 8 / 16,
+  10: 10 / 16,
+  12: 12 / 16,
+  14: 14 / 16,
+  16: 16 / 16,
+  20: 20 / 16,
+  24: 24 / 16,
+  28: 28 / 16,
+  32: 32 / 16,
+  36: 36 / 16,
+  40: 40 / 16,
+  44: 44 / 16,
+  56: 56 / 16,
+  64: 64 / 16,
+  80: 80 / 16,
+  96: 96 / 16,
+  112: 112 / 16,
+  128: 128 / 16,
+);
+
+@each $_spacing_key, $_spacing in $_spacings {
+  .mt-#{$_spacing_key} {
+    margin-top: $_spacing !important;
+  }
+
+  .mr-#{$_spacing_key} {
+    margin-right: $_spacing !important;
+  }
+
+  .mb-#{$_spacing_key} {
+    margin-bottom: $_spacing !important;
+  }
+
+  .ml-#{$_spacing_key} {
+    margin-left: $_spacing !important;
+  }
+}

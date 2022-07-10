@@ -50,6 +50,8 @@
     "no-param-reassign": "off",
     "react/button-has-type": "off",
     "no-promise-executor-return": "off",
-    "react/jsx-props-no-spreading": "off"
+    "react/jsx-props-no-spreading": "off",
+    "no-empty-function": "off",
+    "@typescript-eslint/no-empty-function": "off"
   }
 }
