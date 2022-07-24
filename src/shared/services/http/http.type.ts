@@ -1,6 +1,4 @@
 /* eslint-disable no-unused-vars */
-import { AxiosRequestHeaders, AxiosResponseHeaders } from 'axios';
-
 export enum HttpStatus {
   SUCCESS = 200,
   UNAUTHORIZED = 401,
@@ -11,7 +9,7 @@ export interface HttpResponse<T> {
   message?: string;
   data: T;
   status: number;
-  header?: AxiosResponseHeaders;
+  header?: HeadersInit;
 }
 
 export enum HttpMethod {
@@ -21,11 +19,18 @@ export enum HttpMethod {
   DELETE = 'DELETE',
 }
 
+export enum ThrowErrorStrategy {
+  ThrowOnly,
+  ThrowAndNotify,
+  NotThrow,
+}
+
 export interface HttpOptions {
   queryParams?: Record<
     string,
     string | number | boolean | string[] | number[] | boolean[] | undefined
   >;
-  body?: unknown | FormData;
-  headers?: AxiosRequestHeaders;
+  body?: BodyInit;
+  headers?: HeadersInit;
+  throwError: ThrowErrorStrategy;
 }

@@ -1,74 +1,80 @@
-import axios, { AxiosRequestHeaders, Method } from 'axios';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { catchError, Observable, of, switchMap } from 'rxjs';
+import { fromFetch } from 'rxjs/fetch';
 import addToast from 'shared/components/toastify/add-toast.component';
 import { HttpMessage } from 'shared/const/message.const';
 import { ACCESS_TOKEN } from 'shared/const/user.const';
 import { store } from 'store';
 import { logout } from '../redux/slices/user-slice';
-import StorageService from '../storage';
-import { HttpMethod, HttpOptions } from './http.type';
+import StorageService from '../storage/storage.service';
+import { HttpMethod, HttpOptions, ThrowErrorStrategy } from './http.type';
 
 export class HttpService {
   private commonHeader = {
     Accept: 'application/json',
     'Cache-Control': 'no-cache no-store',
     Pragma: 'no-cache',
-    Expires: 0,
+    Expires: '0',
     'Access-Control-Allow-Origin': '*',
   };
 
-  private instance = axios.create({
-    timeout: 300000,
-  });
-
-  constructor() {
-    this.configInterceptor();
-  }
-
-  public get<T>(uri: string, options?: HttpOptions): Promise<T | undefined> {
+  public get<T>(uri: string, options?: HttpOptions): Observable<T> {
     return this.request(uri, HttpMethod.GET, options);
   }
 
-  public post<T>(uri: string, options?: HttpOptions): Promise<T | undefined> {
+  public post<T>(
+    uri: string,
+    options?: HttpOptions
+  ): Observable<T | undefined> {
     return this.request(uri, HttpMethod.POST, options);
   }
 
-  public put<T>(uri: string, options?: HttpOptions): Promise<T | undefined> {
+  public put<T>(uri: string, options?: HttpOptions): Observable<T> {
     return this.request(uri, HttpMethod.PUT, options);
   }
 
-  public delete<T>(uri: string, options?: HttpOptions): Promise<T | undefined> {
+  public delete<T>(uri: string, options?: HttpOptions): Observable<T> {
     return this.request(uri, HttpMethod.DELETE, options);
   }
 
-  public async request<T>(
+  public request<T>(
     uri: string,
-    method: Method,
+    method: HttpMethod,
     options?: HttpOptions
-  ): Promise<T | undefined> {
+  ): Observable<T> {
     const url = this.resolve(uri);
+    return fromFetch(url, {
+      method,
+      body: JSON.stringify(options?.body),
+      headers: this.generateHeader(options?.headers),
+    }).pipe(
+      switchMap((response) => {
+        if (response.ok) {
+          return response.json();
+        }
 
-    try {
-      const response = await this.instance.request({
-        url,
-        method,
-        data: options?.body,
-        params: options?.queryParams,
-        headers: this.generateHeader(options?.headers),
-      });
+        if (
+          response.status === 401 &&
+          !window.location.pathname.includes('login')
+        ) {
+          addToast({ message: HttpMessage.LOGIN_AGAIN, type: 'error' });
+          store.dispatch(logout());
+          window.location.href = '/login';
+          return of(null);
+        }
 
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw error;
-      } else {
-        throw new Error(HttpMessage.COMMON_ERROR);
-      }
-    }
+        throw response;
+      }),
+      catchError((error: Response) =>
+        this.handleError(
+          error,
+          options?.throwError || ThrowErrorStrategy.NotThrow
+        )
+      )
+    );
   }
 
-  private generateHeader = (
-    header?: AxiosRequestHeaders
-  ): AxiosRequestHeaders => {
+  private generateHeader = (header?: HeadersInit): HeadersInit => {
     const token = StorageService.get(ACCESS_TOKEN);
 
     return {
@@ -78,31 +84,24 @@ export class HttpService {
     };
   };
 
-  private configInterceptor = () => {
-    this.instance.interceptors.response.use(
-      (res) => {
-        return res;
-      },
-      (err) => {
-        const { status, data } = err.response;
+  private handleError(
+    error: Response,
+    throwErrorStrategy: ThrowErrorStrategy
+  ): Observable<any> {
+    switch (throwErrorStrategy) {
+      case ThrowErrorStrategy.ThrowOnly:
+        throw error;
+      case ThrowErrorStrategy.ThrowAndNotify:
+        addToast({
+          message: HttpMessage.PROCESSING_ERROR,
+          type: 'error',
+        });
+        throw error;
+      default:
+        return of(null);
+    }
+  }
 
-        if (status === 401 && !window.location.pathname.includes('login')) {
-          addToast({ message: HttpMessage.LOGIN_AGAIN, type: 'error' });
-          store.dispatch(logout());
-          window.location.href = '/login';
-        } else {
-          addToast({
-            message: data?.message || HttpMessage.COMMON_ERROR,
-            type: 'error',
-          });
-        }
-
-        throw err;
-      }
-    );
-  };
-
-  // eslint-disable-next-line class-methods-use-this
   private resolve = (uri: string): string => {
     if (/^(http|https):\/\/.+$/.test(uri)) {
       return uri;

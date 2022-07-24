@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import StorageService from 'shared/services/storage';
+import StorageService from 'shared/services/storage/storage.service';
 import { User } from 'shared/const/user.const';
 import { RootState } from 'store';
 
